@@ -1,4 +1,6 @@
-FROM nginx:1.21-alpine
+ARG NGINX_IMAGE
+
+FROM ${NGINX_IMAGE}
 
 COPY nginx.conf  /etc/nginx/
 COPY templates /etc/nginx/templates/

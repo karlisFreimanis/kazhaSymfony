@@ -34,4 +34,9 @@ php vendor/bin/phpunit
 php bin/console
 ```
 
+### Queue
+```
+php bin/console messenger:consume -vv
+```
+
 

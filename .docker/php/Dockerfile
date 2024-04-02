@@ -1,6 +1,7 @@
-FROM php:8.2-fpm-alpine
-
 ARG TIMEZONE
+ARG PHP_IMAGE
+
+FROM ${PHP_IMAGE}
 
 # Install dependencies
 RUN apk update && apk add --no-cache \
@@ -13,6 +14,7 @@ RUN apk update && apk add --no-cache \
     zlib-dev \
     libzip-dev \
     freetype-dev \
+    libpng \
     libpng-dev \
     libjpeg-turbo-dev \
     icu-dev \
@@ -21,7 +23,13 @@ RUN apk update && apk add --no-cache \
     acl \
     curl \
 #    postgresql-dev \
-    mysql-dev # Added MySQL dev package
+    mysql-dev
+
+RUN apk add --no-cache pcre-dev $PHPIZE_DEPS && \
+    pecl update-channels && \
+    pecl install redis && \
+    docker-php-ext-enable redis && \
+    apk del $PHPIZE_DEPS
 
 # Configure and install PHP extensions
 RUN docker-php-ext-configure gd --with-jpeg --with-freetype \
@@ -29,7 +37,7 @@ RUN docker-php-ext-configure gd --with-jpeg --with-freetype \
 
 # Set timezone
 RUN ln -snf /usr/share/zoneinfo/${TIMEZONE} /etc/localtime && echo ${TIMEZONE} > /etc/timezone \
-    && printf '[PHP]\ndate.timezone = "%s"\n', ${TIMEZONE} > /usr/local/etc/php/conf.d/tzone.ini \
+    && printf '[PHP]\ndate.timezone = "%s"\n', '${TIMEZONE}' > /usr/local/etc/php/conf.d/tzone.ini \
     && date
 
 # Install Composer

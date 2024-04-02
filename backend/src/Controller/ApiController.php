@@ -4,11 +4,12 @@ namespace App\Controller;
 
 use Nelmio\ApiDocBundle\Annotation\Model;
 use OpenApi\Attributes as OA;
+use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
 
-class ApiController
+class ApiController extends AbstractController
 {
     /**
      * @OA\Info(title="My First API", version="0.1")
