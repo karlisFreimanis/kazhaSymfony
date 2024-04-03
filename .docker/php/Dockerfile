@@ -25,6 +25,11 @@ RUN apk update && apk add --no-cache \
 #    postgresql-dev \
     mysql-dev
 
+# Install Xdebug
+RUN apk add --no-cache linux-headers $PHPIZE_DEPS \
+    && pecl install xdebug-3.3.1 \
+    && docker-php-ext-enable xdebug
+
 RUN apk add --no-cache pcre-dev $PHPIZE_DEPS && \
     pecl update-channels && \
     pecl install redis && \
