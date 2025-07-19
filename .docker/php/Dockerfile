@@ -27,7 +27,7 @@ RUN apk update && apk add --no-cache \
 
 # Install Xdebug
 RUN apk add --no-cache linux-headers $PHPIZE_DEPS \
-    && pecl install xdebug-3.3.1 \
+    && pecl install xdebug-3.4.5 \
     && docker-php-ext-enable xdebug
 
 RUN apk add --no-cache pcre-dev $PHPIZE_DEPS && \
@@ -47,6 +47,11 @@ RUN ln -snf /usr/share/zoneinfo/${TIMEZONE} /etc/localtime && echo ${TIMEZONE} >
 
 # Install Composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
+
+RUN echo "xdebug.mode=debug" > /usr/local/etc/php/conf.d/docker-xdebug.ini
+RUN echo "xdebug.discover_client_host=true" >> /usr/local/etc/php/conf.d/docker-xdebug.ini
+RUN echo "xdebug.client_host=host.docker.internal" >> /usr/local/etc/php/conf.d/docker-xdebug.ini
+RUN echo "xdebug.client_port=9003" >> /usr/local/etc/php/conf.d/docker-xdebug.ini
 
 # Set working directory
 WORKDIR /var/www/symfony
