@@ -22,7 +22,7 @@ docker exec -it {PROJECT_NAME}_php /bin/sh
 composer install
 ```
 ```
-php bin/console doctrine:migrations:migrate
+symfony-console doctrine:migrations:migrate
 ```
 
 ### Api docs
@@ -36,14 +36,19 @@ phpunit.xml.dist
 php vendor/bin/phpunit --coverage-html coverage
 ```
 
+### Logs
+```
+tail -f -n 100 var/log/payment.log
+```
+
 ### Console
 ```
-php bin/console
+symfony-console
 ```
 
 ### Queue
 ```
-php bin/console messenger:consume -vv
+symfony-console messenger:consume -vv
 ```
 
 

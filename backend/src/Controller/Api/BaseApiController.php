@@ -2,23 +2,25 @@
 
 namespace App\Controller\Api;
 
-use App\Exception\ApiValidationException;
+use App\Dto\DtoInterface;
 use OpenApi\Attributes as OA;
+use Psr\Log\LoggerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Annotation\Route;
-use Symfony\Component\Validator\ConstraintViolationListInterface;
+use Symfony\Component\Serializer\SerializerInterface;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
-use Throwable;
 
 class BaseApiController extends AbstractController
 {
     public function __construct(
         protected readonly ValidatorInterface $validator,
-    )
-    {
-
+        protected readonly SerializerInterface $serializer,
+        #[Autowire(service: 'monolog.logger.debug')]
+        protected readonly LoggerInterface $logger,
+    ) {
     }
 
     /**
@@ -60,45 +62,54 @@ class BaseApiController extends AbstractController
         return new JsonResponse(['ping' => true]);
     }
 
-    /**
-     * @param ConstraintViolationListInterface $validationErrors
-     * @param callable                         $callback
-     * @return JsonResponse
-     */
-    protected function handleRequest(
-        ConstraintViolationListInterface $validationErrors,
-        callable                         $callback,
-    ): JsonResponse {
-        if ($validationErrors->count() > 0) {
-            $errorMessages = [];
-            foreach (range(1, $validationErrors->count()) as $counter) {
-                $validationError = $validationErrors->get($counter - 1);
-                $errorMessages[] = $validationError->getPropertyPath() . ': ' . $validationError->getMessage();
+    public function validateDtoFromRequest(
+        DtoInterface $dto,
+    ): ?array {
+        $violations = $this->validator->validate($dto);
+
+        if (count($violations) > 0) {
+            $errors = [];
+            foreach ($violations as $violation) {
+                $field          = $violation->getPropertyPath();
+                $errors[$field] = $violation->getMessage();
             }
-            return $this->handleError($errorMessages, Response::HTTP_BAD_REQUEST);
+
+            return $errors;
         }
 
-        try {
-            return $callback();
-        } catch (ApiValidationException $apiValidationException) {
-            return $this->handleError([$apiValidationException->getMessage()], Response::HTTP_BAD_REQUEST);
-        } catch (Throwable $throwable) {
-            return $this->handleError([$throwable->getMessage()], Response::HTTP_INTERNAL_SERVER_ERROR);
-        }
+        return null;
     }
 
-    /**
-     * @param array $errorMessages
-     * @param int   $response
-     * @return JsonResponse
-     */
-    protected function handleError(array $errorMessages, int $response): JsonResponse
-    {
+    final protected function defaultErrorResponse(
+        string $message,
+        array $errors,
+        int $status = Response::HTTP_BAD_REQUEST,
+    ): JsonResponse {
+        $this->logger->error($message, $errors);
         return new JsonResponse(
             [
-                'errorMessages' => $errorMessages,
+                'status' => $status,
+                'success' => false,
+                'message' => $message,
+                'errors' => $errors,
             ],
-            $response,
+            $status,
+        );
+    }
+
+    final protected function defaultSuccessResponse(
+        string $message,
+        array $data,
+    ): JsonResponse {
+        $this->logger->info($message, $data);
+        return new JsonResponse(
+            [
+                'status' => Response::HTTP_OK,
+                'success' => true,
+                'message' => $message,
+                'data' => $data,
+            ],
+            Response::HTTP_OK,
         );
     }
 }
